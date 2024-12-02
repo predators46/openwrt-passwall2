@@ -92,7 +92,7 @@ jobs:
         run: |
           wget ${{ env.url_sdk }}
           file_name=$(echo ${{env.url_sdk}} | awk -F/ '{print $NF}')
-          mkdir sdk && tar -xJf $file_name -C ./sdk --strip-components=1
+          mkdir sdk && tar -xf $file_name -C ./sdk --strip-components=1
           cd sdk
           echo "src-git passwall_packages https://github.com/${{ env.packages}}.git;main" >> feeds.conf.default
           echo "src-git passwall2 https://github.com/${{ env.passwall2 }}.git;main" >> feeds.conf.default
