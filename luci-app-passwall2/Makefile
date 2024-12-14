@@ -5,8 +5,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-passwall2
-PKG_VERSION:=24.12.11
-PKG_RELEASE:=3
+PKG_VERSION:=24.12.12
+PKG_RELEASE:=2
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_$(PKG_NAME)_Iptables_Transparent_Proxy \
@@ -24,7 +24,6 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Simple_Obfs \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_SingBox \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client \
-	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Geoview \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
 
 LUCI_TITLE:=LuCI support for PassWall 2
@@ -34,22 +33,6 @@ LUCI_DEPENDS:=+coreutils +coreutils-base64 +coreutils-nohup +curl \
 	+xray-core +geoview +v2ray-geoip +v2ray-geosite \
 	+unzip \
 	+PACKAGE_$(PKG_NAME)_INCLUDE_IPv6_Nat:ip6tables-mod-nat
-	+PACKAGE_$(PKG_NAME)_INCLUDE_Haproxy:haproxy \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_Hysteria:hysteria \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_IPv6_Nat:ip6tables-mod-nat \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_NaiveProxy:naiveproxy \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Client:shadowsocks-libev-ss-local \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Client:shadowsocks-libev-ss-redir \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Server:shadowsocks-libev-ss-server \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client:shadowsocks-rust-sslocal \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Server:shadowsocks-rust-ssserver \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_ShadowsocksR_Libev_Client:shadowsocksr-libev-ssr-local \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_ShadowsocksR_Libev_Client:shadowsocksr-libev-ssr-redir \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_ShadowsocksR_Libev_Server:shadowsocksr-libev-ssr-server \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_Simple_Obfs:simple-obfs \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_SingBox:sing-box \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client:tuic-client \
-	+PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin:v2ray-plugin
 
 define Package/$(PKG_NAME)/config
 menu "Configuration"
@@ -153,11 +136,6 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client
 	depends on aarch64||arm||i386||x86_64
 	select PACKAGE_tuic-client
 	default n
-
-config PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Geoview
-	bool "Include V2ray_Geoview"
-	select PACKAGE_geoview
-	default y if aarch64||arm||i386||x86_64
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
 	bool "Include V2ray-Plugin (Shadowsocks Plugin)"
