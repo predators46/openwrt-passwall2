@@ -15,17 +15,16 @@ on:
     branches:
       - 'main'
     paths:
-      - 'luci-app-passwall2/Makefile'
+      - ''
 env:
   TZ: Asia/Makassar
   passwall2: ${{ github.repository }}
   packages: predators46/openwrt-passwall-packages
 
-
 jobs:
   job_check:
     name: Check Version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       passwall2_version: ${{ steps.check_version.outputs.latest_version }}
       has_update: ${{ steps.check_version.outputs.has_update }}
@@ -56,9 +55,9 @@ jobs:
         run: |
           echo "## :mega:Update content" >> release.txt
           echo "![](https://img.shields.io/github/downloads/${{ env.passwall2 }}/${{steps.check_version.outputs.latest_version}}/total?style=flat-square)" >> release.txt
-          echo "### passwall2 Info" >> release.txt
-          echo "**:minidisc: passwall2 Version: ${{steps.check_version.outputs.latest_version}}**" >> release.txt
-          echo "**:gear: OpenWrt SDK Version: 24.10.0-rc2**" >> release.txt
+          echo "### Passwall2 Info" >> release.txt
+          echo "**:minidisc: Passwall2 Version: ${{steps.check_version.outputs.latest_version}}**" >> release.txt
+          echo "**:gear: OpenWrt SDK Version: 24.10.0**" >> release.txt
           touch release.txt
 
       - name: Generate new tag & release
@@ -75,7 +74,7 @@ jobs:
     name: Build passwall2
     needs: job_check
     if: needs.job_check.outputs.has_update == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Install packages
         run: |
@@ -89,15 +88,16 @@ jobs:
 
       - name: Initialization environment
         env:
-          url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/x86/64/openwrt-sdk-24.10.0-rc2-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+          url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/x86/64/openwrt-sdk-24.10.0-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
         run: |
           wget ${{ env.url_sdk }}
           file_name=$(echo ${{env.url_sdk}} | awk -F/ '{print $NF}')
           mkdir sdk && tar -xf $file_name -C ./sdk --strip-components=1
           cd sdk
-          echo "src-git passwall2_packages https://github.com/${{ env.packages }}.git;main" >> feeds.conf.default
+          echo "src-git passwall_packages https://github.com/${{ env.packages}}.git;main" >> feeds.conf.default
           echo "src-git passwall2 https://github.com/${{ env.passwall2 }}.git;main" >> feeds.conf.default
           ./scripts/feeds update -a
+          ./scripts/feeds install -a -f -p passwall_packages
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" > .config
           ./scripts/feeds install -d n luci-app-passwall2
           make download -j8
@@ -105,37 +105,15 @@ jobs:
       - name: Configure passwall2
         run: |
           cd sdk
-          ./scripts/feeds update passwall2_packages
+          ./scripts/feeds update passwall_packages
           ./scripts/feeds update passwall2
           ./scripts/feeds install luci-app-passwall2
           echo "CONFIG_ALL_NONSHARED=n" > .config
           echo "CONFIG_ALL_KMODS=n" >> .config
           echo "CONFIG_ALL=n" >> .config
           echo "CONFIG_AUTOREMOVE=n" >> .config
-          echo "CONFIG_LUCI_LANG_zh_Hans=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_Iptables_Transparent_Proxy=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_Nftables_Transparent_Proxy=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Brook=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ChinaDNS_NG=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Haproxy=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Hysteria=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_NaiveProxy=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Shadowsocks_Libev_Client=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Shadowsocks_Libev_Server=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Shadowsocks_Rust_Client=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Shadowsocks_Rust_Server=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ShadowsocksR_Libev_Client=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ShadowsocksR_Libev_Server=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Simple_Obfs=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_SingBox=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Trojan_GO=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Trojan_Plus=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_tuic_client=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_V2ray_Geodata=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_V2ray_Plugin=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Xray=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Xray_Plugin=n" >> .config
+
           make defconfig
 
       - name: Compile passwall2
@@ -163,62 +141,62 @@ jobs:
   job_auto_compile:
     if: needs.job_check.outputs.has_update == 'true'
     needs: job_check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: build (${{ matrix.platform }})
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: x86_64
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/x86/64/openwrt-sdk-24.10.0-rc2-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/x86/64/openwrt-sdk-24.10.0-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
 
           - platform: aarch64_generic
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/rockchip/armv8/openwrt-sdk-24.10.0-rc2-rockchip-armv8_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/rockchip/armv8/openwrt-sdk-24.10.0-rockchip-armv8_gcc-13.3.0_musl.Linux-x86_64.tar.zst
 
-          - platform: aarch64_cortex-a53
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/mvebu/cortexa53/openwrt-sdk-24.10.0-rc2-mvebu-cortexa53_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+          - platform: aarch64_cortex-a53-21
+            url_sdk: https://downloads.openwrt.org/releases/21.02.7/targets/armvirt/64/openwrt-sdk-21.02.7-armvirt-64_gcc-8.4.0_musl.Linux-x86_64.tar.xz
 
           - platform: aarch64_cortex-a72
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/mvebu/cortexa72/openwrt-sdk-24.10.0-rc2-mvebu-cortexa72_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/mvebu/cortexa72/openwrt-sdk-24.10.0-mvebu-cortexa72_gcc-13.3.0_musl.Linux-x86_64.tar.zst
 
           - platform: arm_cortex-a7
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/mediatek/mt7629/openwrt-sdk-24.10.0-rc2-mediatek-mt7629_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/mediatek/mt7629/openwrt-sdk-24.10.0-mediatek-mt7629_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
 
           - platform: arm_cortex-a7_neon-vfpv4
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/sunxi/cortexa7/openwrt-sdk-24.10.0-rc2-sunxi-cortexa7_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/sunxi/cortexa7/openwrt-sdk-24.10.0-sunxi-cortexa7_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
 
           - platform: arm_cortex-a8_vfpv3
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/sunxi/cortexa8/openwrt-sdk-24.10.0-rc2-sunxi-cortexa8_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/sunxi/cortexa8/openwrt-sdk-24.10.0-sunxi-cortexa8_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
 
           - platform: arm_cortex-a9
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/bcm53xx/generic/openwrt-sdk-24.10.0-rc2-bcm53xx-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/bcm53xx/generic/openwrt-sdk-24.10.0-bcm53xx-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
 
           - platform: arm_cortex-a9_neon
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/zynq/generic/openwrt-sdk-24.10.0-rc2-zynq-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/zynq/generic/openwrt-sdk-24.10.0-zynq-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
 
           - platform: arm_cortex-a9_vfpv3-d16
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/mvebu/cortexa9/openwrt-sdk-24.10.0-rc2-mvebu-cortexa9_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/mvebu/cortexa9/openwrt-sdk-24.10.0-mvebu-cortexa9_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
 
           - platform: arm_cortex-a15_neon-vfpv4
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/ipq806x/generic/openwrt-sdk-24.10.0-rc2-ipq806x-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/ipq806x/generic/openwrt-sdk-24.10.0-ipq806x-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
 
           - platform: mips_24kc
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/ath79/generic/openwrt-sdk-24.10.0-rc2-ath79-generic_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/ath79/generic/openwrt-sdk-24.10.0-ath79-generic_gcc-13.3.0_musl.Linux-x86_64.tar.zst
 
           - platform: mips_4kec
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/realtek/rtl838x/openwrt-sdk-24.10.0-rc2-realtek-rtl838x_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/realtek/rtl838x/openwrt-sdk-24.10.0-realtek-rtl838x_gcc-13.3.0_musl.Linux-x86_64.tar.zst
 
           - platform: mips_mips32
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/bmips/bcm6358/openwrt-sdk-24.10.0-rc2-bmips-bcm6358_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/bmips/bcm6358/openwrt-sdk-24.10.0-bmips-bcm6358_gcc-13.3.0_musl.Linux-x86_64.tar.zst
 
           - platform: mipsel_24kc
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/ramips/rt288x/openwrt-sdk-24.10.0-rc2-ramips-rt288x_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/ramips/rt288x/openwrt-sdk-24.10.0-ramips-rt288x_gcc-13.3.0_musl.Linux-x86_64.tar.zst
 
           - platform: mipsel_74kc
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/ramips/rt3883/openwrt-sdk-24.10.0-rc2-ramips-rt3883_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/ramips/rt3883/openwrt-sdk-24.10.0-ramips-rt3883_gcc-13.3.0_musl.Linux-x86_64.tar.zst
 
           - platform: mipsel_mips32
-            url_sdk: https://downloads.openwrt.org/releases/24.10.0-rc2/targets/bcm47xx/generic/openwrt-sdk-24.10.0-rc2-bcm47xx-generic_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.0/targets/bcm47xx/generic/openwrt-sdk-24.10.0-bcm47xx-generic_gcc-13.3.0_musl.Linux-x86_64.tar.zst
 
     steps:
       - name: Initialization ${{ matrix.platform }} compile environment
@@ -245,11 +223,11 @@ jobs:
       - name: ${{ matrix.platform }} feeds configuration packages
         run: |
           cd sdk
-          echo "src-git passwall2_packages https://github.com/${{ env.packages }}.git;main" >> feeds.conf.default
+          echo "src-git passwall_packages https://github.com/${{ env.packages}}.git;main" >> feeds.conf.default
           echo "src-git passwall2 https://github.com/${{ env.passwall2 }}.git;main" >> feeds.conf.default
 
           ./scripts/feeds update -a
-          ./scripts/feeds install -a -f -p passwall2_packages
+          ./scripts/feeds install -a -f -p passwall_packages
           ./scripts/feeds install luci-app-passwall2
 
           echo "CONFIG_ALL_NONSHARED=n" > .config
@@ -257,28 +235,6 @@ jobs:
           echo "CONFIG_ALL=n" >> .config
           echo "CONFIG_AUTOREMOVE=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_Iptables_Transparent_Proxy=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_Nftables_Transparent_Proxy=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Brook=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ChinaDNS_NG=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Haproxy=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Hysteria=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_NaiveProxy=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Shadowsocks_Libev_Client=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Shadowsocks_Libev_Server=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Shadowsocks_Rust_Client=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Shadowsocks_Rust_Server=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ShadowsocksR_Libev_Client=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ShadowsocksR_Libev_Server=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Simple_Obfs=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_SingBox=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Trojan_GO=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Trojan_Plus=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_tuic_client=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_V2ray_Geodata=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_V2ray_Plugin=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Xray=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Xray_Plugin=y" >> .config
 
           make defconfig
 
@@ -304,7 +260,7 @@ jobs:
           cd sdk
           mkdir upload
 
-          zip -jr upload/passwall2_packages_ipk_${{ matrix.platform }}.zip bin/packages/*/passwall2_packages/
+          zip -jr upload/passwall2_packages_ipk_${{ matrix.platform }}.zip bin/packages/*/passwall_packages/
 
           echo "FIRMWARE=$PWD" >> $GITHUB_ENV
           echo "status=success" >> $GITHUB_OUTPUT
@@ -316,22 +272,22 @@ jobs:
           cd sdk
           echo "## :mega:Update content" >> release.txt
           echo "![](https://img.shields.io/github/downloads/${{ env.passwall2 }}/${{needs.job_check.outputs.passwall2_version}}/total?style=flat-square)" >> release.txt
-          echo "### passwall2 Info" >> release.txt
-          echo "**:minidisc: passwall2 Version: ${{needs.job_check.outputs.passwall2_version}}**" >> release.txt
-          echo "**:gear: OpenWrt SDK Version: 24.10.0-rc2**" >> release.txt
+          echo "### Passwall2 Info" >> release.txt
+          echo "**:minidisc: Passwall2 Version: ${{needs.job_check.outputs.passwall2_version}}**" >> release.txt
+          echo "**:gear: OpenWrt SDK Version: 24.10.0**" >> release.txt
 
           echo "### Packages Version" >> release.txt
           echo "**package name**|**package version**" >> release.txt
           echo "-|-" >> release.txt
 
-          pkgs=$(ls feeds/passwall2_packages -I v2ray-geodata)
+          pkgs=$(ls feeds/passwall_packages -I v2ray-geodata)
           for pkg in $pkgs; do
-            version=$(awk -F ':=' '/PKG_VERSION:=/{print $2}' feeds/passwall2_packages/$pkg/Makefile | sed 's/\r//g')
-            [ -z "${version}" ] && version=$(awk -F ':=' '/PKG_SOURCE_DATE:=/{print $2}' feeds/passwall2_packages/$pkg/Makefile | sed 's/\r//g')
+            version=$(awk -F ':=' '/PKG_VERSION:=/{print $2}' feeds/passwall_packages/$pkg/Makefile | sed 's/\r//g')
+            [ -z "${version}" ] && version=$(awk -F ':=' '/PKG_SOURCE_DATE:=/{print $2}' feeds/passwall_packages/$pkg/Makefile | sed 's/\r//g')
             echo "**:ice_cube: $pkg**|**${version}**" >> release.txt
           done
-          echo "**:ice_cube: v2ray-geoip**|**$(awk -F ':=' '/GEOIP_VER:=/{print $2}' feeds/passwall2_packages/v2ray-geodata/Makefile)**" >> release.txt
-          echo "**:ice_cube: v2ray-geosite**|**$(awk -F ':=' '/GEOSITE_VER:=/{print $2}' feeds/passwall2_packages/v2ray-geodata/Makefile)**" >> release.txt
+          echo "**:ice_cube: v2ray-geoip**|**$(awk -F ':=' '/GEOIP_VER:=/{print $2}' feeds/passwall_packages/v2ray-geodata/Makefile)**" >> release.txt
+          echo "**:ice_cube: v2ray-geosite**|**$(awk -F ':=' '/GEOSITE_VER:=/{print $2}' feeds/passwall_packages/v2ray-geodata/Makefile)**" >> release.txt
 
           touch release.txt
           echo "status=success" >> $GITHUB_OUTPUT
@@ -345,4 +301,3 @@ jobs:
           tag_name: ${{needs.job_check.outputs.passwall2_version}}
           body_path: ${{ env.FIRMWARE }}/release.txt
           files: ${{ env.FIRMWARE }}/upload/*
-
